@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import mysql from "mysql2";
 import multer from "multer";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 // ========================
 // 🔧 Express Setup
@@ -11,7 +12,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 🟢 Allow frontend to access backend (adjust if you use another domain)
 app.use(cors({
   origin: [
     "https://faithbook-9fdd9.web.app", // your Firebase Hosting URL
@@ -20,11 +20,8 @@ app.use(cors({
   methods: ["GET", "POST"],
 }));
 
-// 🟢 Serve uploaded images
-app.use("/uploads", express.static("uploads"));
-
 // ========================
-// 💾 MySQL Connection Pool (Fixes Closed Connection Issue)
+// 💾 MySQL Connection Pool
 // ========================
 const db = mysql.createPool({
   host: "bx7tgxpkbkhxpcwuypha-mysql.services.clever-cloud.com",
@@ -36,7 +33,6 @@ const db = mysql.createPool({
   connectTimeout: 10000
 });
 
-// Test DB connection once
 db.getConnection((err, connection) => {
   if (err) console.error("❌ MySQL connection failed:", err);
   else {
@@ -46,13 +42,22 @@ db.getConnection((err, connection) => {
 });
 
 // ========================
-// 📸 Multer Setup (For Image Uploads)
+// ☁️ Cloudinary Setup
 // ========================
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + "-" + file.originalname;
-    cb(null, uniqueName);
+cloudinary.config({
+  cloud_name: "YOUR_CLOUD_NAME",
+  api_key: "YOUR_API_KEY",
+  api_secret: "YOUR_API_SECRET"
+});
+
+// ========================
+// 📸 Multer Cloudinary Storage
+// ========================
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "faithbook_uploads",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
   },
 });
 const upload = multer({ storage });
@@ -61,13 +66,12 @@ const upload = multer({ storage });
 // 🏠 Routes
 // ========================
 
-// Root test route
-app.get("/", (req, res) => res.send("Faithbook backend is running 🚀"));
+app.get("/", (req, res) => res.send("☁️ Faithbook Cloudinary backend running 🚀"));
 
 // CREATE Post
 app.post("/api/posts", upload.single("image"), (req, res) => {
   const { name, avatar, time, privacy, content } = req.body;
-  const image = req.file ? `/uploads/${req.file.filename}` : null;
+  const image = req.file ? req.file.path : null; // Cloudinary returns a hosted URL
 
   const sql = `
     INSERT INTO posts (name, avatar, time, privacy, content, image)
@@ -79,7 +83,7 @@ app.post("/api/posts", upload.single("image"), (req, res) => {
       console.error("❌ Insert error:", err);
       return res.status(500).json({ error: err.message });
     }
-    res.json({ success: true, id: result.insertId });
+    res.json({ success: true, id: result.insertId, image });
   });
 });
 
