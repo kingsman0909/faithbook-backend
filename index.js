@@ -12,13 +12,34 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors({
-  origin: [
-    "https://faithbook-9fdd9.web.app", // your Firebase Hosting URL
-    "http://localhost:3000"
-  ],
-  methods: ["GET", "POST"],
-}));
+app.use(
+  cors({
+    origin: ["https://faithbook-9fdd9.web.app", "http://localhost:3000"],
+    methods: ["GET", "POST"],
+  })
+);
+
+// ========================
+// ☁️ Cloudinary Config
+// ========================
+cloudinary.config({
+  cloud_name: "dn9a94iwd",
+  api_key: "837615743452121",
+  api_secret: "02NSy4DiE7AUIenMJrER4-A9Ewc",
+});
+
+// ========================
+// 📸 Cloudinary Storage (multer-storage-cloudinary)
+// ========================
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "faithbook_uploads",
+    allowed_formats: ["jpg", "png", "jpeg", "webp", "avif"],
+  },
+});
+
+const upload = multer({ storage });
 
 // ========================
 // 💾 MySQL Connection Pool
@@ -30,7 +51,6 @@ const db = mysql.createPool({
   database: "bx7tgxpkbkhxpcwuypha",
   port: 3306,
   connectionLimit: 10,
-  connectTimeout: 10000
 });
 
 db.getConnection((err, connection) => {
@@ -42,36 +62,14 @@ db.getConnection((err, connection) => {
 });
 
 // ========================
-// ☁️ Cloudinary Setup
-// ========================
-cloudinary.config({
-  cloud_name: "YOUR_CLOUD_NAME",
-  api_key: "YOUR_API_KEY",
-  api_secret: "YOUR_API_SECRET"
-});
-
-// ========================
-// 📸 Multer Cloudinary Storage
-// ========================
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "faithbook_uploads",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
-  },
-});
-const upload = multer({ storage });
-
-// ========================
 // 🏠 Routes
 // ========================
+app.get("/", (req, res) => res.send("Faithbook backend running with Cloudinary 🚀"));
 
-app.get("/", (req, res) => res.send("☁️ Faithbook Cloudinary backend running 🚀"));
-
-// CREATE Post
+// CREATE post
 app.post("/api/posts", upload.single("image"), (req, res) => {
   const { name, avatar, time, privacy, content } = req.body;
-  const image = req.file ? req.file.path : null; // Cloudinary returns a hosted URL
+  const image = req.file ? req.file.path : null; // 🟢 Cloudinary auto adds .path = URL
 
   const sql = `
     INSERT INTO posts (name, avatar, time, privacy, content, image)
@@ -83,11 +81,11 @@ app.post("/api/posts", upload.single("image"), (req, res) => {
       console.error("❌ Insert error:", err);
       return res.status(500).json({ error: err.message });
     }
-    res.json({ success: true, id: result.insertId, image });
+    res.json({ success: true, id: result.insertId });
   });
 });
 
-// READ Posts
+// READ posts
 app.get("/api/posts", (req, res) => {
   db.query("SELECT * FROM posts ORDER BY id DESC", (err, results) => {
     if (err) {
