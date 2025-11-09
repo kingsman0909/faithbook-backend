@@ -27,6 +27,9 @@ app.use(cors({
   optionsSuccessStatus: 204      // respond to OPTIONS with status 204
 }));
 
+app.options('*', cors());
+
+
 
 // ========================
 // 💾 Sequelize Setup
