@@ -104,20 +104,31 @@ app.get("/", (req, res) => res.send("Faithbook backend running with Cloudinary �
 
 // CREATE Post
 app.post("/api/posts", upload.single("image"), async (req, res) => {
-  console.log("REQ BODY:", req.body);
-  console.log("REQ FILE:", req.file);
+  console.log("===== POST REQUEST =====");
+  console.log("Headers:", req.headers);
+  console.log("Body:", req.body);
+  console.log("File:", req.file);
 
   try {
     const { name, avatar, privacy, content } = req.body;
-    const image = req.file ? req.file.path : null;
+
+    if (!name) {
+      return res.status(400).json({ error: "Name is required" });
+    }
+
+    const image = req.file ? (req.file.path || req.file.filename || req.file.url) : null;
+    console.log("Image URL:", image);
 
     const post = await Post.create({ name, avatar, privacy, content, image });
+    console.log("Created Post:", post.toJSON());
+
     res.json({ success: true, id: post.id, image });
   } catch (err) {
-    console.error("❌ Insert error:", err);
+    console.error("❌ Error in POST /api/posts:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 // READ Posts
