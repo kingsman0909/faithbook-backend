@@ -22,9 +22,7 @@ app.use(cors({
     "http://localhost:3000"
   ],
   methods: ["GET","POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
-  preflightContinue: false,      // stop Express from passing OPTIONS down
-  optionsSuccessStatus: 204      // respond to OPTIONS with status 204
+  allowedHeaders: ["Content-Type"]
 }));
 
 app.options('*', cors());
@@ -106,17 +104,21 @@ app.get("/", (req, res) => res.send("Faithbook backend running with Cloudinary ð
 
 // CREATE Post
 app.post("/api/posts", upload.single("image"), async (req, res) => {
+  console.log("REQ BODY:", req.body);
+  console.log("REQ FILE:", req.file);
+
   try {
-    const { name, avatar, time, privacy, content } = req.body;
+    const { name, avatar, privacy, content } = req.body;
     const image = req.file ? req.file.path : null;
 
-    const post = await Post.create({ name, avatar, time, privacy, content, image });
+    const post = await Post.create({ name, avatar, privacy, content, image });
     res.json({ success: true, id: post.id, image });
   } catch (err) {
     console.error("âŒ Insert error:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // READ Posts
 app.get("/api/posts", async (req, res) => {
