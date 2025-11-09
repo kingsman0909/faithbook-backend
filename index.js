@@ -110,33 +110,38 @@ app.post("/api/posts", upload.single("image"), async (req, res) => {
   console.log("File:", req.file);
 
   try {
-    const { name, avatar, privacy, content } = req.body;
+    const { name, avatar = '', privacy = 'Public', content = '' } = req.body;
 
+    // Required field check
     if (!name) {
       return res.status(400).json({ error: "Name is required" });
     }
 
+    // Safely handle image
     const image = req.file ? (req.file.path || req.file.filename || req.file.url) : null;
-    console.log("Image URL:", image);
 
-    // 👈 Include time as string here
-    const post = await Post.create({ 
-      name, 
-      avatar, 
-      privacy, 
-      content, 
+    // Always provide time as string
+    const time = new Date().toLocaleString();
+
+    // Create post
+    const post = await Post.create({
+      name,
+      avatar,
+      privacy,
+      content,
       image,
-      time: new Date().toLocaleString()  // store as string
+      time
     });
 
     console.log("Created Post:", post.toJSON());
 
-    res.json({ success: true, id: post.id, image });
+    res.json({ success: true, id: post.id, image, time });
   } catch (err) {
     console.error("❌ Error in POST /api/posts:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
