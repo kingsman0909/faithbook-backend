@@ -22,7 +22,9 @@ app.use(cors({
     "http://localhost:3000"
   ],
   methods: ["GET","POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type"]
+  allowedHeaders: ["Content-Type"],
+  preflightContinue: false,      // stop Express from passing OPTIONS down
+  optionsSuccessStatus: 204      // respond to OPTIONS with status 204
 }));
 
 
