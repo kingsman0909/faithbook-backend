@@ -60,14 +60,13 @@ const Post = sequelize.define("Post", {
   avatar: { type: DataTypes.STRING },
   privacy: { type: DataTypes.STRING, defaultValue: "public" },
   content: { type: DataTypes.TEXT },
-  image: { type: DataTypes.STRING }
+  image: { type: DataTypes.STRING },
+  time: { type: DataTypes.STRING, allowNull: false }  // 👈 store time as string
 }, {
   tableName: "posts",
-  timestamps: true,          // automatically adds createdAt & updatedAt
-  createdAt: "time",         // rename createdAt to time
-  updatedAt: false           // optional: disable updatedAt if not needed
-
+  timestamps: false  // 👈 disable automatic timestamps
 });
+
 
 
 // Sync table
@@ -103,6 +102,7 @@ app.get("/", (req, res) => res.send("Faithbook backend running with Cloudinary �
 
 
 // CREATE Post
+// CREATE Post
 app.post("/api/posts", upload.single("image"), async (req, res) => {
   console.log("===== POST REQUEST =====");
   console.log("Headers:", req.headers);
@@ -119,7 +119,16 @@ app.post("/api/posts", upload.single("image"), async (req, res) => {
     const image = req.file ? (req.file.path || req.file.filename || req.file.url) : null;
     console.log("Image URL:", image);
 
-    const post = await Post.create({ name, avatar, privacy, content, image });
+    // 👈 Include time as string here
+    const post = await Post.create({ 
+      name, 
+      avatar, 
+      privacy, 
+      content, 
+      image,
+      time: new Date().toLocaleString()  // store as string
+    });
+
     console.log("Created Post:", post.toJSON());
 
     res.json({ success: true, id: post.id, image });
@@ -128,6 +137,7 @@ app.post("/api/posts", upload.single("image"), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
