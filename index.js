@@ -15,6 +15,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
 app.use(cors({
   origin: [
     "https://faithbook-9fdd9.web.app",
@@ -24,9 +25,11 @@ app.use(cors({
   allowedHeaders: ["Content-Type"]
 }));
 
+
 // ========================
 // 💾 Sequelize Setup
 // ========================
+
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
@@ -60,6 +63,7 @@ const Post = sequelize.define("Post", {
   timestamps: true,          // automatically adds createdAt & updatedAt
   createdAt: "time",         // rename createdAt to time
   updatedAt: false           // optional: disable updatedAt if not needed
+
 });
 
 
@@ -67,6 +71,7 @@ const Post = sequelize.define("Post", {
 await sequelize.sync();
 
 // ========================
+
 // ☁️ Cloudinary Setup
 // ========================
 cloudinary.config({
@@ -88,11 +93,11 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 // ========================
+
 // 🏠 Routes
 // ========================
+app.get("/", (req, res) => res.send("Faithbook backend running with Cloudinary 🚀"));
 
-// Test route
-app.get("/", (req, res) => res.send("☁️ Faithbook Cloudinary backend running 🚀"));
 
 // CREATE Post
 app.post("/api/posts", upload.single("image"), async (req, res) => {
@@ -117,6 +122,7 @@ app.get("/api/posts", async (req, res) => {
     console.error("❌ Fetch error:", err);
     res.status(500).json({ error: err.message });
   }
+
 });
 
 app.delete('/api/posts/all', async (req, res) => {
