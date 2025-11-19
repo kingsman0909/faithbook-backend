@@ -62,7 +62,7 @@ const User = sequelize.define(
 const Post = sequelize.define(
   "Post",
   {
-    userId: { type: DataTypes.STRING, allowNull: false }, // Firebase UID
+    userId: { type: DataTypes.STRING, allowNull: false }, // store Firebase UID
     privacy: { type: DataTypes.STRING, defaultValue: "Public" },
     content: { type: DataTypes.TEXT },
     image: { type: DataTypes.STRING },
@@ -71,9 +71,10 @@ const Post = sequelize.define(
   { tableName: "posts", timestamps: false }
 );
 
-// 🔗 Relationships
-User.hasMany(Post, { foreignKey: "userId" });
-Post.belongsTo(User, { foreignKey: "userId" });
+// 🔹 Remove FK relationship
+// We no longer use User.hasMany(Post) or Post.belongsTo(User)
+// You can still manually query posts by Firebase UID when needed
+
 
 // ========================
 // ☁️ Cloudinary Setup
