@@ -6,7 +6,6 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { Sequelize, DataTypes } from "sequelize";
 import dotenv from "dotenv";
 
-
 dotenv.config();
 
 // ========================
@@ -16,24 +15,22 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(
+  cors({
+    origin: [
+      "https://faithbook-9fdd9.web.app",
+      "http://localhost:3000"
+    ],
+    methods: ["GET","POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type"]
+  })
+);
 
-app.use(cors({
-  origin: [
-    "https://faithbook-9fdd9.web.app",
-    "http://localhost:3000"
-  ],
-  methods: ["GET","POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type"]
-}));
-
-app.options('*', cors());
-
-
+app.options("*", cors());
 
 // ========================
 // 💾 Sequelize Setup
 // ========================
-
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
@@ -46,52 +43,39 @@ const sequelize = new Sequelize(
   }
 );
 
-try {
-  await sequelize.authenticate();
-  console.log("✅ Connected to MySQL via Sequelize!");
-} catch (err) {
-  console.error("❌ Sequelize connection failed:", err);
-}
-
 // ========================
-// 🏗 Define Post Model
+// 🏗 Define Models
 // ========================
-const User = sequelize.define("User", {
-  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  firebaseUid: { type: DataTypes.STRING, allowNull: false, unique: true },
-  username: { type: DataTypes.STRING, allowNull: false },
-  avatar: { type: DataTypes.STRING, defaultValue: '' },
-  bio: { type: DataTypes.TEXT, defaultValue: '' },
-  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
-}, {
-  tableName: "users",
-  timestamps: false
-});
+const User = sequelize.define(
+  "User",
+  {
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    firebaseUid: { type: DataTypes.STRING, allowNull: false, unique: true },
+    username: { type: DataTypes.STRING, allowNull: false },
+    avatar: { type: DataTypes.STRING, defaultValue: "" },
+    bio: { type: DataTypes.TEXT, defaultValue: "" },
+    created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+  },
+  { tableName: "users", timestamps: false }
+);
 
-const Post = sequelize.define("Post", {
-  userId: { type: DataTypes.STRING, allowNull: false }, // 🔹 string for Firebase UID
-  privacy: { type: DataTypes.STRING, defaultValue: "public" },
-  content: { type: DataTypes.TEXT },
-  image: { type: DataTypes.STRING },
-  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
-}, {
-  tableName: "posts",
-  timestamps: false
-});
+const Post = sequelize.define(
+  "Post",
+  {
+    userId: { type: DataTypes.STRING, allowNull: false }, // Firebase UID
+    privacy: { type: DataTypes.STRING, defaultValue: "Public" },
+    content: { type: DataTypes.TEXT },
+    image: { type: DataTypes.STRING },
+    created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+  },
+  { tableName: "posts", timestamps: false }
+);
 
 // 🔗 Relationships
 User.hasMany(Post, { foreignKey: "userId" });
 Post.belongsTo(User, { foreignKey: "userId" });
 
-// 🔄 Sync tables - override existing database
-await sequelize.sync({ force: true }); // ⚠️ WARNING: drops existing tables!
-console.log("✅ Database synced - existing tables dropped and recreated");
-
-// Sync tables (add { alter: true } if tables already exist)
-await sequelize.sync();
-
 // ========================
-
 // ☁️ Cloudinary Setup
 // ========================
 cloudinary.config({
@@ -113,13 +97,10 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 // ========================
-
 // 🏠 Routes
 // ========================
 app.get("/", (req, res) => res.send("Faithbook backend running with Cloudinary 🚀"));
 
-
-// CREATE Post
 // CREATE Post
 app.post("/api/posts", upload.single("image"), async (req, res) => {
   console.log("===== POST REQUEST =====");
@@ -128,67 +109,66 @@ app.post("/api/posts", upload.single("image"), async (req, res) => {
   console.log("File:", req.file);
 
   try {
-    const { name, avatar = '', privacy = 'Public', content = '' } = req.body;
+    const { userId, privacy = "Public", content = "" } = req.body;
 
-    // Required field check
-    if (!name) {
-      return res.status(400).json({ error: "Name is required" });
-    }
+    if (!userId) return res.status(400).json({ error: "userId is required" });
 
-    // Safely handle image
-    const image = req.file ? (req.file.path || req.file.filename || req.file.url) : null;
+    const image = req.file ? req.file.path : null;
 
-    // Always provide time as string
-    const time = new Date().toLocaleString();
-
-    // Create post
     const post = await Post.create({
-      name,
-      avatar,
+      userId,
       privacy,
       content,
-      image,
-      time
+      image
     });
 
     console.log("Created Post:", post.toJSON());
 
-    res.json({ success: true, id: post.id, image, time });
+    res.json({ success: true, post });
   } catch (err) {
     console.error("❌ Error in POST /api/posts:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-
-
-
-
 // READ Posts
 app.get("/api/posts", async (req, res) => {
   try {
-    const posts = await Post.findAll({ order: [["id","DESC"]] });
+    const posts = await Post.findAll({ order: [["id", "DESC"]] });
     res.json(posts);
   } catch (err) {
     console.error("❌ Fetch error:", err);
     res.status(500).json({ error: err.message });
   }
-
 });
 
-app.delete('/api/posts/all', async (req, res) => {
+// DELETE ALL Posts (use carefully!)
+app.delete("/api/posts/all", async (req, res) => {
   try {
-    // 🔒 Add authentication here so only you can call it
     await Post.destroy({ where: {}, truncate: true });
-    res.json({ message: 'All posts deleted' });
+    res.json({ message: "All posts deleted" });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to delete posts' });
+    res.status(500).json({ error: "Failed to delete posts" });
   }
 });
-
 
 // ========================
 // 🚀 Start Server
 // ========================
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+const startServer = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log("✅ Connected to MySQL via Sequelize!");
+
+    await sequelize.sync({ force: true }); // ⚠️ drops existing tables
+    console.log("✅ Database synced - tables created");
+
+    const PORT = process.env.PORT || 10000;
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  } catch (err) {
+    console.error("❌ Startup failed:", err);
+    process.exit(1);
+  }
+};
+
+startServer();
