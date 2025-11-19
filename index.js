@@ -79,9 +79,13 @@ const Post = sequelize.define("Post", {
   timestamps: false
 });
 
-// Relationships
+// 🔗 Relationships
 User.hasMany(Post, { foreignKey: "userId" });
 Post.belongsTo(User, { foreignKey: "userId" });
+
+// 🔄 Sync tables - override existing database
+await sequelize.sync({ force: true }); // ⚠️ WARNING: drops existing tables!
+console.log("✅ Database synced - existing tables dropped and recreated");
 
 // Sync tables (add { alter: true } if tables already exist)
 await sequelize.sync();
