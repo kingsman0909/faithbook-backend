@@ -111,7 +111,7 @@ app.post("/api/posts", upload.single("image"), async (req, res) => {
   console.log("File:", req.file);
 
   try {
-    const { userId, privacy = "Public", content = "" } = req.body;
+    const { userId, name, privacy = "Public", content = "" } = req.body;
 
     if (!userId) return res.status(400).json({ error: "userId is required" });
 
