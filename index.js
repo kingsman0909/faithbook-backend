@@ -56,21 +56,34 @@ try {
 // ========================
 // 🏗 Define Post Model
 // ========================
+const User = sequelize.define("User", {
+  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+  firebaseUid: { type: DataTypes.STRING, allowNull: false, unique: true },
+  username: { type: DataTypes.STRING, allowNull: false },
+  avatar: { type: DataTypes.STRING, defaultValue: '' },
+  bio: { type: DataTypes.TEXT, defaultValue: '' },
+  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+}, {
+  tableName: "users",
+  timestamps: false
+});
+
 const Post = sequelize.define("Post", {
-  name: { type: DataTypes.STRING, allowNull: false },
-  avatar: { type: DataTypes.STRING },
+  userId: { type: DataTypes.INTEGER, allowNull: false },
   privacy: { type: DataTypes.STRING, defaultValue: "public" },
   content: { type: DataTypes.TEXT },
   image: { type: DataTypes.STRING },
-  time: { type: DataTypes.STRING, allowNull: false }  // 👈 store time as string
+  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
 }, {
   tableName: "posts",
-  timestamps: false  // 👈 disable automatic timestamps
+  timestamps: false
 });
 
+// Relationships
+User.hasMany(Post, { foreignKey: "userId" });
+Post.belongsTo(User, { foreignKey: "userId" });
 
-
-// Sync table
+// Sync tables (add { alter: true } if tables already exist)
 await sequelize.sync();
 
 // ========================
