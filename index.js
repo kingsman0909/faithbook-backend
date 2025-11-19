@@ -63,6 +63,7 @@ const Post = sequelize.define(
   "Post",
   {
     userId: { type: DataTypes.STRING, allowNull: false }, // store Firebase UID
+    name: { type: DataTypes.STRING, allowNull: false },
     privacy: { type: DataTypes.STRING, defaultValue: "Public" },
     content: { type: DataTypes.TEXT },
     image: { type: DataTypes.STRING },
@@ -118,6 +119,7 @@ app.post("/api/posts", upload.single("image"), async (req, res) => {
 
     const post = await Post.create({
       userId,
+      name,
       privacy,
       content,
       image
