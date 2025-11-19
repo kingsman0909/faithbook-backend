@@ -69,7 +69,7 @@ const User = sequelize.define("User", {
 });
 
 const Post = sequelize.define("Post", {
-  userId: { type: DataTypes.INTEGER, allowNull: false },
+  userId: { type: DataTypes.STRING, allowNull: false }, // 🔹 string for Firebase UID
   privacy: { type: DataTypes.STRING, defaultValue: "public" },
   content: { type: DataTypes.TEXT },
   image: { type: DataTypes.STRING },
