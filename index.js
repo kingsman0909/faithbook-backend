@@ -163,7 +163,7 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log("✅ Connected to MySQL via Sequelize!");
 
-    await sequelize.sync({ force: true }); // ⚠️ drops existing tables
+    await sequelize.sync(); // ⚠️ drops existing tables
     console.log("✅ Database synced - tables created");
 
     const PORT = process.env.PORT || 10000;
